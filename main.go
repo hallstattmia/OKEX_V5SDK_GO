@@ -102,8 +102,8 @@ func wsPriv() {
 
 // 订阅公共频道
 func wsPub() {
-	ep := "wss://ws.okex.com:8443/ws/v5/public?brokerId=9999"
-
+	//ep := "wss://ws.okex.com:8443/ws/v5/public?brokerId=9999"
+	ep := "wss://wsaws.okx.com:8443/ws/v5/public"
 	// 创建ws客户端
 	r, err := NewWsClient(ep)
 	if err != nil {
@@ -112,7 +112,7 @@ func wsPub() {
 	}
 
 	// 设置连接超时
-	r.SetDailTimeout(time.Second * 2)
+	r.SetDailTimeout(time.Second * 5)
 	err = r.Start()
 	if err != nil {
 		log.Println(err)
@@ -122,12 +122,14 @@ func wsPub() {
 	// 订阅产品频道
 	var args []map[string]string
 	arg := make(map[string]string)
-	arg["instType"] = FUTURES
+	// arg["instType"] = FUTURES
+
+	arg["instId"] = "BTC-USDT"
 	//arg["instType"] = OPTION
 	args = append(args, arg)
-
+	
 	start := time.Now()
-	res, _, err := r.PubInstruemnts(OP_SUBSCRIBE, args)
+	res, _, err := r.PubOrderBooks(OP_SUBSCRIBE, "bbo-tbt", args)
 	if res {
 		usedTime := time.Since(start)
 		fmt.Println("订阅成功！", usedTime.String())
@@ -135,15 +137,41 @@ func wsPub() {
 		fmt.Println("订阅失败！", err)
 	}
 
+	resTicker, _, err := r.PubTickers(OP_SUBSCRIBE, args)
+	if resTicker {
+		usedTime := time.Since(start)
+		fmt.Println("订阅成功！", usedTime.String())
+	} else {
+		fmt.Println("订阅失败！", err)
+	}
+
+
+	resTrade, _, err := r.PubTrade(OP_SUBSCRIBE, args)
+	if resTrade {
+		usedTime := time.Since(start)
+		fmt.Println("订阅Trade成功！", usedTime.String())
+	} else {
+		fmt.Println("订阅Trade失败！", err)
+	}
+
 	time.Sleep(30 * time.Second)
 
 	start = time.Now()
-	res, _, err = r.PubInstruemnts(OP_UNSUBSCRIBE, args)
+	res, _, err = r.PubOrderBooks(OP_UNSUBSCRIBE, "bbo-tbt", args)
 	if res {
 		usedTime := time.Since(start)
 		fmt.Println("取消订阅成功！", usedTime.String())
 	} else {
 		fmt.Println("取消订阅失败！", err)
+	}
+
+	start = time.Now()
+	resTrade, _, err = r.PubTrade(OP_UNSUBSCRIBE, args)
+	if resTrade {
+		usedTime := time.Since(start)
+		fmt.Println("取消订阅Trade成功！", usedTime.String())
+	} else {
+		fmt.Println("取消订阅Trade失败！", err)
 	}
 }
 
@@ -205,14 +233,15 @@ func wsJrpc() {
 
 func main() {
 	// 公共订阅
+	fmt.Println("wsPub")
 	wsPub()
 
 	// 私有订阅
-	wsPriv()
+//	wsPriv()
 
 	// websocket交易
-	wsJrpc()
+//	wsJrpc()
 
 	// rest请求
-	REST()
+//	REST()
 }

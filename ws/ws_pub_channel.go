@@ -93,6 +93,9 @@ func (a *WsClient) PubOrderBooks(op string, channel string, params []map[string]
 	// 5档快照
 	case "books5":
 		return a.PubChannel(EVENT_BOOK_ORDER_BOOK5, op, params, PERIOD_NONE, timeOut...)
+			// 400 tbt
+	case "bbo-tbt":
+		return a.PubChannel(EVENT_BOOK_ORDER_BOOK1_TBT, op, params, PERIOD_NONE, timeOut...)
 	// 400 tbt
 	case "books-l2-tbt":
 		return a.PubChannel(EVENT_BOOK_ORDER_BOOK_TBT, op, params, PERIOD_NONE, timeOut...)
