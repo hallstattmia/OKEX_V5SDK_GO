@@ -88,7 +88,7 @@ func wsPriv() {
 		fmt.Println("订阅失败！", err)
 	}
 
-	time.Sleep(100 * time.Second)
+	time.Sleep(1000 * time.Second)
 	start = time.Now()
 	res, _, err = r.PrivAccout(OP_UNSUBSCRIBE, args)
 	if res {
@@ -103,7 +103,7 @@ func wsPriv() {
 // 订阅公共频道
 func wsPub() {
 	//ep := "wss://ws.okex.com:8443/ws/v5/public?brokerId=9999"
-	ep := "wss://wsaws.okx.com:8443/ws/v5/public"
+	ep := "wss://ws.okx.com:8443/ws/v5/public"
 	// 创建ws客户端
 	r, err := NewWsClient(ep)
 	if err != nil {
@@ -127,9 +127,17 @@ func wsPub() {
 	arg["instId"] = "BTC-USDT"
 	//arg["instType"] = OPTION
 	args = append(args, arg)
-	
+
 	start := time.Now()
+
 	res, _, err := r.PubOrderBooks(OP_SUBSCRIBE, "bbo-tbt", args)
+	if res {
+		usedTime := time.Since(start)
+		fmt.Println("订阅成功！", usedTime.String())
+	} else {
+		fmt.Println("订阅失败！", err)
+	}
+	res, _, err = r.PubOrderBooks(OP_SUBSCRIBE, "books5", args)
 	if res {
 		usedTime := time.Since(start)
 		fmt.Println("订阅成功！", usedTime.String())
@@ -140,38 +148,45 @@ func wsPub() {
 	resTicker, _, err := r.PubTickers(OP_SUBSCRIBE, args)
 	if resTicker {
 		usedTime := time.Since(start)
+		fmt.Println("订阅成功!", usedTime.String())
+	} else {
+		fmt.Println("订阅失败!", err)
+	}
+
+	resTrade, _, err := r.PubTrade(OP_SUBSCRIBE, args)
+	if resTrade {
+		usedTime := time.Since(start)
 		fmt.Println("订阅成功！", usedTime.String())
 	} else {
 		fmt.Println("订阅失败！", err)
 	}
 
-
-	resTrade, _, err := r.PubTrade(OP_SUBSCRIBE, args)
-	if resTrade {
-		usedTime := time.Since(start)
-		fmt.Println("订阅Trade成功！", usedTime.String())
-	} else {
-		fmt.Println("订阅Trade失败！", err)
-	}
-
-	time.Sleep(30 * time.Second)
+	time.Sleep(1000 * time.Second)
 
 	start = time.Now()
 	res, _, err = r.PubOrderBooks(OP_UNSUBSCRIBE, "bbo-tbt", args)
 	if res {
 		usedTime := time.Since(start)
-		fmt.Println("取消订阅成功！", usedTime.String())
+		fmt.Println("取消订阅成功!", usedTime.String())
 	} else {
-		fmt.Println("取消订阅失败！", err)
+		fmt.Println("取消订阅失败!", err)
 	}
 
 	start = time.Now()
 	resTrade, _, err = r.PubTrade(OP_UNSUBSCRIBE, args)
 	if resTrade {
 		usedTime := time.Since(start)
-		fmt.Println("取消订阅Trade成功！", usedTime.String())
+		fmt.Println("取消订阅成功!", usedTime.String())
 	} else {
-		fmt.Println("取消订阅Trade失败！", err)
+		fmt.Println("取消订阅失败!", err)
+	}
+
+	resTicker, _, err = r.PubTickers(OP_UNSUBSCRIBE, args)
+	if resTicker {
+		usedTime := time.Since(start)
+		fmt.Println("取消订阅成功!", usedTime.String())
+	} else {
+		fmt.Println("取消订阅失败!", err)
 	}
 }
 
@@ -237,11 +252,11 @@ func main() {
 	wsPub()
 
 	// 私有订阅
-//	wsPriv()
+	//	wsPriv()
 
 	// websocket交易
-//	wsJrpc()
+	//	wsJrpc()
 
 	// rest请求
-//	REST()
+	//	REST()
 }

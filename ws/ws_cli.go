@@ -321,7 +321,18 @@ func (a *WsClient) receive() {
 		}
 
 	}()
-
+	var tickerCsv Csv
+	tickerCsv.OpenCsv("ticker.csv", "LastPrice,LastSize,BestBidPrice,BestBidSize,BestAskPrice,BestAskSize,TimeStamp")
+	defer tickerCsv.CloseCsv()
+	var tradeCsv Csv
+	tradeCsv.OpenCsv("trades.csv", "InstId,TradeId,Price,Size,Side,TimeStamp")
+	defer tradeCsv.CloseCsv()
+	var orderbookCsv Csv
+	orderbookCsv.OpenCsv("orderbook.csv", "BestBidPrice,BestBidSize,BestBidOrderSize,BestAskPrice,BestAskSize,BestAskOrderSize,CheckSum,TimeStamp")
+	defer orderbookCsv.CloseCsv()
+	var orderbook5Csv Csv
+	orderbook5Csv.OpenCsv("orderbook5.csv", "BestBidPrice,BestBidSize,BestBidOrderSize,BestAskPrice,BestAskSize,BestAskOrderSize,CheckSum,TimeStamp")
+	defer orderbook5Csv.CloseCsv()
 	for {
 		messageType, message, err := a.conn.ReadMessage()
 		if err != nil {
@@ -343,7 +354,82 @@ func (a *WsClient) receive() {
 			}
 		}
 
-		log.Println("[收到消息]", string(txtMsg))
+		var receiveData ReceiveData
+		err = json.Unmarshal(txtMsg, &receiveData)
+		if err != nil {
+			log.Println("receive message error!" + err.Error())
+		}
+
+		switch receiveData.Arg.Channel {
+		case "tickers":
+			var ticker Ticker
+			err = json.Unmarshal(txtMsg, &ticker)
+			if err != nil {
+				log.Println("receive message error!" + err.Error())
+			}
+			for _, data := range ticker.Data {
+				tickerCsv.WriterCsv(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%d",
+					data.LastPrice,
+					data.LastSize,
+					data.BestBidPrice,
+					data.BestBidSize,
+					data.BestAskPrice,
+					data.BestAskSize,
+					data.TimeStamp))
+			}
+		case "trades":
+			log.Println("[收到消息]", string(txtMsg))
+			var trades Trades
+			err = json.Unmarshal(txtMsg, &trades)
+			if err != nil {
+				log.Println("receive message error!" + err.Error())
+			}
+			for _, data := range trades.Data {
+				tradeCsv.WriterCsv(fmt.Sprintf("%s,%d,%s,%s,%s,%d",
+					data.InstId,
+					data.TradeId,
+					data.Price,
+					data.Size,
+					data.Side,
+					data.TimeStamp))
+			}
+
+		case "bbo-tbt":
+			log.Println("[收到消息]", string(txtMsg))
+			var orderbook Orderbook
+			err = json.Unmarshal(txtMsg, &orderbook)
+			if err != nil {
+				log.Println("receive message error!" + err.Error())
+			}
+			for _, data := range orderbook.Data {
+				orderbookCsv.WriterCsv(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%d,%d",
+					data.Bids[0][0],
+					data.Bids[0][1],
+					data.Bids[0][3],
+					data.Asks[0][0],
+					data.Asks[0][1],
+					data.Asks[0][3],
+					data.CheckSum,
+					data.TimeStamp))
+			}
+		case "books5":
+			var orderbook Orderbook
+			err = json.Unmarshal(txtMsg, &orderbook)
+			if err != nil {
+				log.Println("receive message error!" + err.Error())
+			}
+			for _, data := range orderbook.Data {
+				orderbook5Csv.WriterCsv(fmt.Sprintf("%s,%s,%s,%s,%s,%s,%d,%d",
+					data.Bids[0][0],
+					data.Bids[0][1],
+					data.Bids[0][3],
+					data.Asks[0][0],
+					data.Asks[0][1],
+					data.Asks[0][3],
+					data.CheckSum,
+					data.TimeStamp))
+			}
+		}
 
 		//发送结果到默认消息处理通道
 
@@ -660,7 +746,7 @@ func (a *WsClient) Stop() error {
 	}
 
 	a.isStarted = false
-	
+
 	if a.conn != nil {
 		a.conn.Close()
 	}
